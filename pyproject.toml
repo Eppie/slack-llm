@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "slack-llm"
+version = "0.1.0"
+description = "An LLM-powered Slackbot"
+authors = ["Andrew Epstein"]
+readme = "README.md"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+slack-sdk = "^3.27.1"
+ollama = "^0.1.9"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+mypy = "^1.10.0"
+pytest = "^8.1.2"
+ruff = "^0.4.2"
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
