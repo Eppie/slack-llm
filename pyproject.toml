@@ -13,11 +13,13 @@ build-backend = "poetry.core.masonry.api"
 python = "^3.12"
 slack-sdk = "^3.27.1"
 ollama = "^0.1.9"
+tiktoken = "^0.6.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"
 mypy = "^1.10.0"
 pytest = "^8.1.2"
+pytest-mock = "^3.14.0"
 ruff = "^0.4.2"
 
 [tool.mypy]
@@ -34,4 +36,15 @@ strict = true
 pretty = true
 
 [tool.black]
-line_length = 120
+line_length = 88
+target-version = ['py312']
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["G004", "D102", "ANN101", "D100", "D103", "T201", "E501", "PTH123", "D101", "ANN204", "D107", "D203", "D213"]
+fixable = ["ALL"]

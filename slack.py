@@ -18,11 +18,15 @@ logging.basicConfig(level=logging.INFO)
 
 def determine_reply(user_message: str) -> bool:
     raw_response = determine_reply_bot.generate_response(
-        f"Using ONLY JSON, evaluate this message: {user_message}", "", "json"
+        f"Using ONLY JSON, evaluate this message: {user_message}",
+        "",
+        "json",
     )
     try:
         response = json.loads(raw_response)
-        logger.info(f"Confidence: {response['confidence']}, replying: {response['should_reply']}")
+        logger.info(
+            f"Confidence: {response['confidence']}, replying: {response['should_reply']}",
+        )
         return bool(response["should_reply"])
     except json.decoder.JSONDecodeError:
         logger.warning(raw_response)
@@ -47,8 +51,6 @@ def handle_message(event_data: dict[str, Any]) -> None:
 
 
 def handle_slash(event_data: dict[str, Any]) -> None:
-    global main_bot
-
     command = event_data["command"]
     if command == "/system":
         main_bot.update_system_prompt(event_data["text"])
