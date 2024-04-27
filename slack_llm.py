@@ -48,7 +48,11 @@ class SlackLLM:
         return m
 
     def generate_messages(self, user_text: str, channel: str) -> list[dict[str, str]]:
-        result = [self.generate_system_message()]+ list(self.last_messages[channel])+ [self.generate_user_message(user_text, channel)]
+        result = (
+            [self.generate_system_message()]
+            + list(self.last_messages[channel])
+            + [self.generate_user_message(user_text, channel)]
+        )
         return result
 
     def generate_response(self, user_text: str, channel: str) -> str:

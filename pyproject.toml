@@ -34,4 +34,4 @@ strict = true
 pretty = true
 
 [tool.black]
-line_length = 80
+line_length = 120
