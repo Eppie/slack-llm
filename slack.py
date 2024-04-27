@@ -17,7 +17,9 @@ logging.basicConfig(level=logging.INFO)
 
 
 def determine_reply(user_message: str) -> bool:
-    raw_response = determine_reply_bot.generate_response(user_message, "")
+    raw_response = determine_reply_bot.generate_response(
+        f"Using ONLY JSON, evaluate this message: {user_message}", "", "json"
+    )
     try:
         response = json.loads(raw_response)
         logger.info(f"Confidence: {response['confidence']}, replying: {response['should_reply']}")

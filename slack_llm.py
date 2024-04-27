@@ -55,12 +55,13 @@ class SlackLLM:
         )
         return result
 
-    def generate_response(self, user_text: str, channel: str) -> str:
+    def generate_response(self, user_text: str, channel: str, format: str = "") -> str:
         response = ""
         for part in ollama.chat(
             model=self.model,
             messages=self.generate_messages(user_text, channel),
             stream=True,
+            format=format,
         ):
             print(part["message"]["content"], end="", flush=True)
             response += part["message"]["content"]
