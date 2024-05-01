@@ -1,9 +1,11 @@
+import base64
 import json
 import logging
 import os
 import time
 from typing import Any
 
+import requests
 from slack_sdk import WebClient
 from slack_sdk.socket_mode import SocketModeClient
 from slack_sdk.socket_mode.request import SocketModeRequest
@@ -33,6 +35,13 @@ def determine_reply(user_message: str) -> bool:
         return True
 
 
+def download_image_as_base64(url: str) -> bytes:
+    headers = {"Authorization": f"Bearer {slack_token}"}
+    response = requests.get(url, timeout=10, headers=headers)
+    response.raise_for_status()
+    return base64.b64encode(response.content)
+
+
 def handle_message(event_data: dict[str, Any]) -> None:
     logging.info(f"Received event data: {event_data}")
     message = event_data["event"]
@@ -45,6 +54,19 @@ def handle_message(event_data: dict[str, Any]) -> None:
         should_reply = determine_reply(user_message)
         if should_reply:
             bot_response = main_bot.generate_response(user_message, channel_id)
+            bot_response = bot_response.strip("\n")
+            # Send the response back to the channel
+            slack_client.chat_postMessage(channel=channel_id, text=bot_response)
+    elif message.get("subtype") == "file_share":
+        for f in message.get("files"):
+            channel_id = message["channel"]
+            user_message = message.get("text")
+            base64 = download_image_as_base64(f.get("url_private"))
+            bot_response = llava_bot.generate_response(
+                user_message,
+                channel_id,
+                images=[base64],
+            )
             bot_response = bot_response.strip("\n")
             # Send the response back to the channel
             slack_client.chat_postMessage(channel=channel_id, text=bot_response)
@@ -80,6 +102,11 @@ if __name__ == "__main__":
     socket_mode_client = SocketModeClient(app_token=app_token, web_client=slack_client)
 
     main_bot = SlackLLM()
+    llava_bot = SlackLLM(
+        model="llava:34b",
+        system_prompt="Follow the user's instructions. If no instructions are provided, or if the user says 'No message.', describe the provided image in as much detail as possible.",
+        max_len=0,
+    )
     with open("determine_reply.txt") as f:
         system_prompt = "\n".join(f.readlines())
     determine_reply_bot = SlackLLM(system_prompt=system_prompt, max_len=0)
