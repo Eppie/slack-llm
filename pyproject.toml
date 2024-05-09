@@ -15,6 +15,9 @@ slack-sdk = "^3.27.1"
 ollama = "^0.1.9"
 tiktoken = "^0.6.0"
 requests = "^2.31.0"
+torch = "^2.3.0"
+diffusers = "^0.27.2"
+accelerate = "^0.30.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"
@@ -48,5 +51,5 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = ["G004", "D102", "ANN101", "D100", "D103", "T201", "E501", "PTH123", "D101", "ANN204", "D107", "D203", "D213"]
+ignore = ["G004", "D102", "ANN101", "D100", "D103", "T201", "E501", "PTH123", "D101", "ANN204", "D107", "D203", "D213", "TRY300"]
 fixable = ["ALL"]

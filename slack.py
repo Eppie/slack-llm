@@ -3,9 +3,13 @@ import json
 import logging
 import os
 import time
+import uuid
+from pathlib import Path
 from typing import Any
 
 import requests
+import torch
+from diffusers import DiffusionPipeline
 from slack_sdk import WebClient
 from slack_sdk.socket_mode import SocketModeClient
 from slack_sdk.socket_mode.request import SocketModeRequest
@@ -35,6 +39,35 @@ def determine_reply(user_message: str) -> bool:
         return True
 
 
+def generate_image(prompt: str) -> str:
+    if torch.cuda.is_available():
+        logger.info("Using NVIDIA GPU")
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        logger.info("Using Apple GPU")
+        device = torch.device("mps")
+    else:
+        logger.warning("Using CPU!")
+        device = torch.device("cpu")
+    pipe = DiffusionPipeline.from_pretrained(  # type: ignore[no-untyped-call]
+        "stabilityai/stable-diffusion-xl-base-1.0",
+        torch_dtype=torch.float16,
+        variant="fp16",
+        use_safetensors=True,
+    ).to(device)
+
+    image = pipe(
+        prompt=prompt,
+    ).images[0]
+
+    filename = f"{uuid.uuid4()}.png"
+    output_path = Path("output_images") / filename
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(output_path)
+
+    return str(output_path)
+
+
 def download_image_as_base64(url: str) -> bytes:
     headers = {"Authorization": f"Bearer {slack_token}"}
     response = requests.get(url, timeout=10, headers=headers)
@@ -51,11 +84,28 @@ def handle_message(event_data: dict[str, Any]) -> None:
         channel_id = message["channel"]
         user_message = message.get("text")
         logging.info(f"Processing message from user: {user_message}")
+        if user_message.startswith("Generate an image of"):
+            prompt = user_message[len("Generate an image of") :].strip()
+            image_path = generate_image(prompt)
+            try:
+                slack_client.files_upload(
+                    channels=channel_id,
+                    file=image_path,
+                    title="Generated Image",
+                    initial_comment="Here's the image you requested!",
+                )
+                logging.info("Image uploaded successfully.")
+                return
+            except Exception:
+                logging.exception("Failed to upload image!")
+                slack_client.chat_postMessage(
+                    channel=channel_id,
+                    text="Failed to generate image.",
+                )
         should_reply = determine_reply(user_message)
         if should_reply:
             bot_response = main_bot.generate_response(user_message, channel_id)
             bot_response = bot_response.strip("\n")
-            # Send the response back to the channel
             slack_client.chat_postMessage(channel=channel_id, text=bot_response)
     elif message.get("subtype") == "file_share":
         for f in message.get("files"):
@@ -68,7 +118,6 @@ def handle_message(event_data: dict[str, Any]) -> None:
                 images=[base64],
             )
             bot_response = bot_response.strip("\n")
-            # Send the response back to the channel
             slack_client.chat_postMessage(channel=channel_id, text=bot_response)
 
 
